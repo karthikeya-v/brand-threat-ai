@@ -169,7 +169,7 @@ export function ThreatCard({ threat, onStatusChange }: ThreatCardProps) {
             {threat.status === 'reviewing' && (
               <>
                 <Button
-                  variant="success"
+                  variant="primary"
                   size="sm"
                   onClick={() => handleStatusChange('resolved')}
                 >

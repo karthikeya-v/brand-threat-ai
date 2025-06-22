@@ -64,8 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         apiClient.setToken(token)
         try {
           const response = await auth.getCurrentUser()
-          if (response.data) {
-            dispatch({ type: 'SET_USER', payload: response.data })
+          if (response.data && typeof response.data === 'object' && 'id' in response.data) {
+            dispatch({ type: 'SET_USER', payload: response.data as User })
           } else {
             localStorage.removeItem('auth_token')
             dispatch({ type: 'SET_LOADING', payload: false })
@@ -88,8 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await auth.login(email, password)
       
-      if (response.data) {
-        const { access_token, user } = response.data
+      if (response.data && typeof response.data === 'object' && 'access_token' in response.data) {
+        const { access_token, user } = response.data as { access_token: string; user: User }
         apiClient.setToken(access_token)
         dispatch({ type: 'SET_USER', payload: user })
         return { success: true }
@@ -109,8 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await auth.register(email, password, companyName)
       
-      if (response.data) {
-        const { access_token, user } = response.data
+      if (response.data && typeof response.data === 'object' && 'access_token' in response.data) {
+        const { access_token, user } = response.data as { access_token: string; user: User }
         apiClient.setToken(access_token)
         dispatch({ type: 'SET_USER', payload: user })
         return { success: true }
@@ -132,8 +132,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     try {
       const response = await auth.getCurrentUser()
-      if (response.data) {
-        dispatch({ type: 'SET_USER', payload: response.data })
+      if (response.data && typeof response.data === 'object' && 'id' in response.data) {
+        dispatch({ type: 'SET_USER', payload: response.data as User })
       }
     } catch (error) {
       console.error('Failed to refresh user:', error)

@@ -29,16 +29,16 @@ export default function DashboardPage() {
           brands.getAll()
         ])
 
-        if (statsResponse.data) {
-          setOverviewStats(statsResponse.data)
+        if (statsResponse.data && Object.keys(statsResponse.data).length > 0) {
+          setOverviewStats(statsResponse.data as OverviewStats)
         }
 
-        if (threatsResponse.data) {
-          setRecentThreats(threatsResponse.data)
+        if (threatsResponse.data && Array.isArray(threatsResponse.data)) {
+          setRecentThreats(threatsResponse.data as Threat[])
         }
 
-        if (brandsResponse.data) {
-          setUserBrands(brandsResponse.data)
+        if (brandsResponse.data && Array.isArray(brandsResponse.data)) {
+          setUserBrands(brandsResponse.data as Brand[])
         }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error)
@@ -55,8 +55,8 @@ export default function DashboardPage() {
       await threats.updateStatus(threatId, status)
       // Refresh threats
       const response = await threats.getAll({ limit: 6 })
-      if (response.data) {
-        setRecentThreats(response.data)
+      if (response.data && Array.isArray(response.data)) {
+        setRecentThreats(response.data as Threat[])
       }
     } catch (error) {
       console.error('Failed to update threat status:', error)
