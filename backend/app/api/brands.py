@@ -7,13 +7,55 @@ from typing import List, Optional
 from uuid import UUID
 
 from app.db.database import get_db
-from app.core.auth import get_current_active_user
+from app.api.keycloak_auth import get_current_keycloak_user
 from app.models.user import User
 from app.models.brand import Brand
 from app.models.threat import Threat
 from app.models.mention import Mention
 
 router = APIRouter()
+
+
+async def get_or_create_user_from_keycloak(keycloak_user: dict, db: AsyncSession) -> User:
+    """Get or create user from Keycloak user data"""
+    user_id = keycloak_user.get("sub")
+    email = keycloak_user.get("email")
+    
+    # Try to find existing user by Keycloak sub (user_id)
+    result = await db.execute(
+        select(User).where(User.keycloak_id == user_id)
+    )
+    user = result.scalar_one_or_none()
+    
+    if user:
+        return user
+    
+    # Try to find by email if no keycloak_id match
+    if email:
+        result = await db.execute(
+            select(User).where(User.email == email)
+        )
+        user = result.scalar_one_or_none()
+        
+        if user:
+            # Update the user with Keycloak ID
+            user.keycloak_id = user_id
+            await db.commit()
+            return user
+    
+    # Create new user
+    user = User(
+        keycloak_id=user_id,
+        email=email,
+        name=keycloak_user.get("name", keycloak_user.get("preferred_username", "")),
+        tier="starter",  # Default tier for new users
+        is_active=True
+    )
+    
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
 
 
 class BrandCreate(BaseModel):
@@ -60,9 +102,10 @@ class BrandResponse(BaseModel):
 
 @router.get("/", response_model=List[BrandResponse])
 async def get_brands(
-    current_user: User = Depends(get_current_active_user),
+    keycloak_user: dict = Depends(get_current_keycloak_user),
     db: AsyncSession = Depends(get_db)
 ):
+    current_user = await get_or_create_user_from_keycloak(keycloak_user, db)
     # Get brands with stats
     result = await db.execute(
         select(Brand)
@@ -106,9 +149,10 @@ async def get_brands(
 @router.post("/", response_model=BrandResponse)
 async def create_brand(
     brand_data: BrandCreate,
-    current_user: User = Depends(get_current_active_user),
+    keycloak_user: dict = Depends(get_current_keycloak_user),
     db: AsyncSession = Depends(get_db)
 ):
+    current_user = await get_or_create_user_from_keycloak(keycloak_user, db)
     # Check tier limits
     if current_user.tier == "starter":
         existing_brands = await db.execute(
@@ -159,9 +203,10 @@ async def create_brand(
 @router.get("/{brand_id}", response_model=BrandResponse)
 async def get_brand(
     brand_id: UUID,
-    current_user: User = Depends(get_current_active_user),
+    keycloak_user: dict = Depends(get_current_keycloak_user),
     db: AsyncSession = Depends(get_db)
 ):
+    current_user = await get_or_create_user_from_keycloak(keycloak_user, db)
     result = await db.execute(
         select(Brand)
         .where(Brand.id == brand_id, Brand.user_id == current_user.id)
@@ -204,9 +249,10 @@ async def get_brand(
 async def update_brand(
     brand_id: UUID,
     brand_data: BrandUpdate,
-    current_user: User = Depends(get_current_active_user),
+    keycloak_user: dict = Depends(get_current_keycloak_user),
     db: AsyncSession = Depends(get_db)
 ):
+    current_user = await get_or_create_user_from_keycloak(keycloak_user, db)
     result = await db.execute(
         select(Brand).where(Brand.id == brand_id, Brand.user_id == current_user.id)
     )
@@ -239,9 +285,10 @@ async def update_brand(
 @router.delete("/{brand_id}")
 async def delete_brand(
     brand_id: UUID,
-    current_user: User = Depends(get_current_active_user),
+    keycloak_user: dict = Depends(get_current_keycloak_user),
     db: AsyncSession = Depends(get_db)
 ):
+    current_user = await get_or_create_user_from_keycloak(keycloak_user, db)
     result = await db.execute(
         select(Brand).where(Brand.id == brand_id, Brand.user_id == current_user.id)
     )
@@ -259,9 +306,10 @@ async def delete_brand(
 @router.post("/{brand_id}/test")
 async def test_brand_monitoring(
     brand_id: UUID,
-    current_user: User = Depends(get_current_active_user),
+    keycloak_user: dict = Depends(get_current_keycloak_user),
     db: AsyncSession = Depends(get_db)
 ):
+    current_user = await get_or_create_user_from_keycloak(keycloak_user, db)
     result = await db.execute(
         select(Brand).where(Brand.id == brand_id, Brand.user_id == current_user.id)
     )

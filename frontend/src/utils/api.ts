@@ -9,14 +9,19 @@ export interface ApiResponse<T> {
 class ApiClient {
   private baseURL: string;
   private token: string | null = null;
+  private getToken: (() => string | null) | null = null;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
     
-    // Load token from localStorage on client side
+    // Load token from localStorage on client side (fallback)
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('auth_token');
     }
+  }
+
+  setTokenProvider(getToken: () => string | null) {
+    this.getToken = getToken;
   }
 
   setToken(token: string) {
@@ -28,9 +33,19 @@ class ApiClient {
 
   clearToken() {
     this.token = null;
+    this.getToken = null;
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
     }
+  }
+
+  private getCurrentToken(): string | null {
+    // First try the token provider (Keycloak)
+    if (this.getToken) {
+      return this.getToken();
+    }
+    // Fallback to stored token
+    return this.token;
   }
 
   private async request<T>(
@@ -44,8 +59,9 @@ class ApiClient {
       ...((options.headers as Record<string, string>) || {}),
     };
 
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
+    const currentToken = this.getCurrentToken();
+    if (currentToken) {
+      headers.Authorization = `Bearer ${currentToken}`;
     }
 
     try {
@@ -101,8 +117,9 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     
     const headers: Record<string, string> = {};
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
+    const currentToken = this.getCurrentToken();
+    if (currentToken) {
+      headers.Authorization = `Bearer ${currentToken}`;
     }
 
     try {

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ThreatCard } from '@/components/dashboard/ThreatCard'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { threats, analytics, brands } from '@/utils/api'
+import { useApiAuth } from '@/utils/keycloakApi'
 import { Threat, OverviewStats, Brand } from '@/types'
 import {
   ShieldExclamationIcon,
@@ -15,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline'
 
 export default function DashboardPage() {
+  const { authenticated } = useApiAuth()
   const [overviewStats, setOverviewStats] = useState<OverviewStats | null>(null)
   const [recentThreats, setRecentThreats] = useState<Threat[]>([])
   const [userBrands, setUserBrands] = useState<Brand[]>([])
@@ -22,6 +24,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!authenticated) {
+        setIsLoading(false)
+        return
+      }
+
       try {
         const [statsResponse, threatsResponse, brandsResponse] = await Promise.all([
           analytics.getOverview({ days: 7 }),
@@ -48,7 +55,7 @@ export default function DashboardPage() {
     }
 
     fetchDashboardData()
-  }, [])
+  }, [authenticated])
 
   const handleThreatStatusChange = async (threatId: string, status: string) => {
     try {

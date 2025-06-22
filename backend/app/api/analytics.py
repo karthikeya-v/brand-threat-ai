@@ -7,11 +7,53 @@ from uuid import UUID
 from datetime import datetime, timedelta
 
 from app.db.database import get_db
-from app.core.auth import get_current_active_user
+from app.api.keycloak_auth import get_current_keycloak_user
 from app.models.user import User
 from app.models.brand import Brand
 from app.models.threat import Threat
 from app.models.mention import Mention
+
+
+async def get_or_create_user_from_keycloak(keycloak_user: dict, db: AsyncSession) -> User:
+    """Get or create user from Keycloak user data"""
+    user_id = keycloak_user.get("sub")
+    email = keycloak_user.get("email")
+    
+    # Try to find existing user by Keycloak sub (user_id)
+    result = await db.execute(
+        select(User).where(User.keycloak_id == user_id)
+    )
+    user = result.scalar_one_or_none()
+    
+    if user:
+        return user
+    
+    # Try to find by email if no keycloak_id match
+    if email:
+        result = await db.execute(
+            select(User).where(User.email == email)
+        )
+        user = result.scalar_one_or_none()
+        
+        if user:
+            # Update the user with Keycloak ID
+            user.keycloak_id = user_id
+            await db.commit()
+            return user
+    
+    # Create new user
+    user = User(
+        keycloak_id=user_id,
+        email=email,
+        name=keycloak_user.get("name", keycloak_user.get("preferred_username", "")),
+        tier="starter",  # Default tier for new users
+        is_active=True
+    )
+    
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
 
 router = APIRouter()
 
@@ -51,9 +93,10 @@ class PlatformPerformance(BaseModel):
 async def get_overview_stats(
     brand_id: Optional[UUID] = Query(None),
     days: int = Query(30),
-    current_user: User = Depends(get_current_active_user),
+    keycloak_user: dict = Depends(get_current_keycloak_user),
     db: AsyncSession = Depends(get_db)
 ):
+    current_user = await get_or_create_user_from_keycloak(keycloak_user, db)
     since_date = datetime.utcnow() - timedelta(days=days)
     
     # Base query for user's brands
@@ -116,9 +159,10 @@ async def get_overview_stats(
 async def get_sentiment_trends(
     brand_id: Optional[UUID] = Query(None),
     days: int = Query(30),
-    current_user: User = Depends(get_current_active_user),
+    keycloak_user: dict = Depends(get_current_keycloak_user),
     db: AsyncSession = Depends(get_db)
 ):
+    current_user = await get_or_create_user_from_keycloak(keycloak_user, db)
     since_date = datetime.utcnow() - timedelta(days=days)
     
     # Get brand IDs
@@ -199,9 +243,10 @@ async def get_sentiment_trends(
 async def get_threat_breakdown(
     brand_id: Optional[UUID] = Query(None),
     days: int = Query(30),
-    current_user: User = Depends(get_current_active_user),
+    keycloak_user: dict = Depends(get_current_keycloak_user),
     db: AsyncSession = Depends(get_db)
 ):
+    current_user = await get_or_create_user_from_keycloak(keycloak_user, db)
     since_date = datetime.utcnow() - timedelta(days=days)
     
     # Get brand IDs
@@ -263,9 +308,10 @@ async def get_threat_breakdown(
 async def get_platform_performance(
     brand_id: Optional[UUID] = Query(None),
     days: int = Query(30),
-    current_user: User = Depends(get_current_active_user),
+    keycloak_user: dict = Depends(get_current_keycloak_user),
     db: AsyncSession = Depends(get_db)
 ):
+    current_user = await get_or_create_user_from_keycloak(keycloak_user, db)
     since_date = datetime.utcnow() - timedelta(days=days)
     
     # Get brand IDs

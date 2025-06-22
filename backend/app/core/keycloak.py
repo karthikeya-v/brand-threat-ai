@@ -25,7 +25,10 @@ class KeycloakManager:
         """Get Keycloak public key for JWT verification"""
         if not self._public_key:
             try:
-                self._public_key = self.keycloak_openid.public_key()
+                # Get the raw public key
+                raw_public_key = self.keycloak_openid.public_key()
+                # Format it as PEM certificate
+                self._public_key = f"-----BEGIN PUBLIC KEY-----\n{raw_public_key}\n-----END PUBLIC KEY-----"
             except KeycloakError as e:
                 logger.error(f"Error getting Keycloak public key: {e}")
                 raise HTTPException(
