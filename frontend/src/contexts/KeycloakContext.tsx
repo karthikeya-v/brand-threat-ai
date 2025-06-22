@@ -43,13 +43,19 @@ export const KeycloakProvider: React.FC<KeycloakProviderProps> = ({ children }) 
           clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'threatwatch-frontend',
         };
 
+        console.log('Initializing Keycloak with config:', keycloakConfig);
+
         const keycloakInstance = new Keycloak(keycloakConfig);
         
         const authenticated = await keycloakInstance.init({
           onLoad: 'check-sso',
           silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
           pkceMethod: 'S256',
+          checkLoginIframe: false,
+          flow: 'standard'
         });
+
+        console.log('Keycloak initialization result:', { authenticated });
 
         setKeycloak(keycloakInstance);
         setAuthenticated(authenticated);
@@ -79,7 +85,9 @@ export const KeycloakProvider: React.FC<KeycloakProviderProps> = ({ children }) 
         }
       } catch (error) {
         console.error('Keycloak initialization failed:', error);
+        console.error('Error details:', error);
       } finally {
+        console.log('Setting loading to false');
         setLoading(false);
       }
     };

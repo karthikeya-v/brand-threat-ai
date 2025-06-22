@@ -1,40 +1,33 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { useAuth } from '@/contexts/AuthContext'
+import { useKeycloak } from '@/contexts/KeycloakContext'
 import { ShieldExclamationIcon } from '@heroicons/react/24/outline'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  
   const router = useRouter()
-  const { login } = useAuth()
+  const { login, authenticated, loading } = useKeycloak()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setIsLoading(true)
-
-    try {
-      const result = await login(email, password)
-      
-      if (result.success) {
-        router.push('/dashboard')
-      } else {
-        setError(result.error || 'Login failed')
-      }
-    } catch (error) {
-      setError('Network error. Please try again.')
-    } finally {
-      setIsLoading(false)
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (!loading && authenticated) {
+      router.push('/dashboard')
     }
+  }, [authenticated, loading, router])
+
+  const handleLogin = () => {
+    login()
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      </div>
+    )
   }
 
   return (
@@ -53,67 +46,18 @@ export default function LoginPage() {
         </div>
 
         <Card>
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Enter your email"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Enter your password"
-              />
-            </div>
+          <div className="space-y-6 text-center">
+            <p className="text-gray-600">
+              Click the button below to sign in with Keycloak
+            </p>
 
             <Button
-              type="submit"
+              onClick={handleLogin}
               className="w-full"
-              isLoading={isLoading}
             >
-              Sign in
+              Sign in with Keycloak
             </Button>
-
-            <div className="text-center">
-              <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <Link
-                  href="/auth/register"
-                  className="font-medium text-primary-600 hover:text-primary-500"
-                >
-                  Sign up
-                </Link>
-              </p>
-            </div>
-          </form>
+          </div>
         </Card>
       </div>
     </div>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Keycloak</title>
+    <script src="https://unpkg.com/keycloak-js@23.0.7/dist/keycloak.min.js"></script>
+</head>
+<body>
+    <h1>Keycloak Test</h1>
+    <div id="status">Initializing...</div>
+    <button id="login-btn" onclick="login()" style="display:none;">Login</button>
+    <button id="logout-btn" onclick="logout()" style="display:none;">Logout</button>
+    <div id="user-info" style="display:none;"></div>
+
+    <script>
+        const keycloak = new Keycloak({
+            url: 'http://localhost:8080',
+            realm: 'threatwatch',
+            clientId: 'threatwatch-frontend'
+        });
+
+        keycloak.init({
+            onLoad: 'check-sso',
+            pkceMethod: 'S256'
+        }).then(function(authenticated) {
+            console.log('Keycloak initialized. Authenticated:', authenticated);
+            document.getElementById('status').innerHTML = 'Keycloak initialized. Authenticated: ' + authenticated;
+            
+            if (authenticated) {
+                document.getElementById('logout-btn').style.display = 'block';
+                keycloak.loadUserInfo().then(function(userInfo) {
+                    document.getElementById('user-info').innerHTML = '<h3>User Info:</h3><pre>' + JSON.stringify(userInfo, null, 2) + '</pre>';
+                    document.getElementById('user-info').style.display = 'block';
+                });
+            } else {
+                document.getElementById('login-btn').style.display = 'block';
+            }
+        }).catch(function(error) {
+            console.error('Keycloak initialization failed:', error);
+            document.getElementById('status').innerHTML = 'Keycloak initialization failed: ' + error.message;
+        });
+
+        function login() {
+            keycloak.login();
+        }
+
+        function logout() {
+            keycloak.logout();
+        }
+    </script>
+</body>
+</html>
