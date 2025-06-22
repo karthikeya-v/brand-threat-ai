@@ -27,7 +27,8 @@
     "lucide-react": "^0.298.0",
     "clsx": "^2.0.0",
     "tailwind-merge": "^2.2.0",
-    "date-fns": "^3.0.6"
+    "date-fns": "^3.0.6",
+    "keycloak-js": "^23.0.1"
   },
   "devDependencies": {
     "eslint": "^8.56.0",

@@ -29,8 +29,14 @@ class Settings(BaseSettings):
     # LaunchDarkly
     LAUNCHDARKLY_SDK_KEY: Optional[str] = None
     
+    # Keycloak
+    KEYCLOAK_SERVER_URL: str = "http://localhost:8080"
+    KEYCLOAK_REALM: str = "threatwatch"
+    KEYCLOAK_CLIENT_ID: str = "threatwatch-backend"
+    KEYCLOAK_CLIENT_SECRET: Optional[str] = None
+    
     # CORS
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8080"]
     
     # Celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"

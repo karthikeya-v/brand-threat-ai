@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { ThreatCard } from '@/components/dashboard/ThreatCard'
+import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { threats, analytics, brands } from '@/utils/api'
 import { Threat, OverviewStats, Brand } from '@/types'
 import {
@@ -82,12 +83,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Monitor your brand threats in real-time</p>
-      </div>
+    <ProtectedRoute>
+      <div className="space-y-6">
+        {/* Page header */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Monitor your brand threats in real-time</p>
+        </div>
 
       {/* Stats overview */}
       {overviewStats && (
@@ -227,5 +229,6 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
+    </ProtectedRoute>
   )
 }

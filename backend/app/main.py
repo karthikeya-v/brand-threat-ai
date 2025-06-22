@@ -5,7 +5,7 @@ import logging
 
 from app.core.config import settings
 from app.db.database import engine, Base
-from app.api import auth, brands, threats, mentions, analytics
+from app.api import auth, brands, threats, mentions, analytics, keycloak_auth
 
 
 @asynccontextmanager
@@ -43,6 +43,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
+app.include_router(keycloak_auth.router, prefix="/api/auth", tags=["keycloak-authentication"])
 app.include_router(brands.router, prefix="/api/brands", tags=["brands"])
 app.include_router(threats.router, prefix="/api/threats", tags=["threats"])
 app.include_router(mentions.router, prefix="/api/mentions", tags=["mentions"])
