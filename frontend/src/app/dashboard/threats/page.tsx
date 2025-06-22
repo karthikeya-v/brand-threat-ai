@@ -53,7 +53,7 @@ export default function ThreatsPage() {
   const filteredThreats = allThreats.filter(threat => {
     if (filter === 'all') return true
     if (filter === 'new') return threat.status === 'new'
-    if (filter === 'investigating') return threat.status === 'investigating'
+    if (filter === 'reviewing') return threat.status === 'reviewing'
     if (filter === 'resolved') return threat.status === 'resolved'
     if (filter === 'high-severity') return threat.severity_score > 0.7
     return true
@@ -88,7 +88,7 @@ export default function ThreatsPage() {
           {[
             { key: 'all', label: 'All Threats', count: allThreats.length },
             { key: 'new', label: 'New', count: allThreats.filter(t => t.status === 'new').length },
-            { key: 'investigating', label: 'Investigating', count: allThreats.filter(t => t.status === 'investigating').length },
+            { key: 'reviewing', label: 'Reviewing', count: allThreats.filter(t => t.status === 'reviewing').length },
             { key: 'high-severity', label: 'High Severity', count: allThreats.filter(t => t.severity_score > 0.7).length },
             { key: 'resolved', label: 'Resolved', count: allThreats.filter(t => t.status === 'resolved').length },
           ].map((tab) => (
@@ -118,7 +118,6 @@ export default function ThreatsPage() {
               key={threat.id}
               threat={threat}
               onStatusChange={handleThreatStatusChange}
-              expanded={true}
             />
           ))
         ) : (
@@ -129,7 +128,7 @@ export default function ThreatsPage() {
               <p className="text-sm text-gray-400">
                 {filter === 'all' 
                   ? 'No threats detected for your brands yet'
-                  : `No ${filter.replace('-', ' ')} threats found`
+                  : `No ${filter.replace('-', ' ').replace('reviewing', 'reviewing')} threats found`
                 }
               </p>
             </CardContent>
